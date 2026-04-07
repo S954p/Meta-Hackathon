@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+pytest
+openai
+httpx
+python-multipart
+PyYAML
+streamlit
+requests
+plotly

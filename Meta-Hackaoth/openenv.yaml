@@ -1,0 +1,35 @@
+# OpenEnv-style benchmark manifest (Meta-Hackaoth support ticket simulator)
+# ---------------------------------------------------------------------------
+# Reproducibility: pass integer `seed` to `SupportTicketEnvironment.reset(seed=...)`
+# or POST /reset with {"task_id": "...", "seed": 123}. Omit seed for random episode.
+#
+environment:
+  id: meta_hackaoth_support_ticket_v1
+  entry_point:
+    module: support_env.environment
+    class: SupportTicketEnvironment
+  tasks:
+    - id: easy_password_reset
+      grader: support_env.task_graders.grade_password_reset
+    - id: medium_billing_missing_info
+      grader: support_env.task_graders.grade_billing
+    - id: hard_technical_troubleshooting
+      grader: support_env.task_graders.grade_technical
+
+schemas:
+  observation: support_env.models.Observation
+  action: support_env.models.Action
+  reward: support_env.models.Reward
+  state: support_env.models.EnvironmentState
+  action_input_reference: support_env.typed_action_inputs  # per-action Pydantic payloads
+
+baseline:
+  script: baseline_inference.py
+  aggregates: [per_task_score, mean_score, total_shaped_reward, seed_used]
+
+scenarios:
+  # Optional `scenario` on reset — customer simulation variants (see Customer.scenario)
+  cooperative: default
+  angry_customer: frustrated tone, lower satisfaction drift
+  silent_customer: first asks get empty replies (then responds)
+  escalation_hint: opening message pressures supervisor / escalation

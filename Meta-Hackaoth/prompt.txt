@@ -1,0 +1,491 @@
+1. Project Objective
+
+Build a real-world environment where an AI agent learns to:
+
+Read customer support tickets
+Classify issue type
+Ask for missing information
+Search knowledge base
+Respond to customer
+Resolve issue
+Close ticket
+Escalate when necessary
+Optimize resolution time and customer satisfaction
+
+This environment must simulate real workflows used by companies like SaaS companies, banks, e-commerce, telecom, etc.
+
+This is NOT a game environment.
+It must simulate real human work.
+
+2. OpenEnv Specification Requirements
+
+The environment must implement the OpenEnv API:
+
+Required Methods
+reset() → returns initial observation
+step(action) → returns observation, reward, done, info
+state() → returns full internal environment state
+Typed Models (Pydantic)
+
+You must define typed models for:
+
+Observation
+Action
+Reward
+Ticket
+Customer
+AgentState
+EnvironmentState
+KnowledgeBaseResult
+Observation Should Include
+ticket_id
+customer_message
+ticket_status
+ticket_priority
+conversation_history
+knowledge_base_results
+time_elapsed
+actions_taken
+customer_satisfaction_score
+Action Types
+classify_ticket
+ask_customer_question
+search_knowledge_base
+send_response
+resolve_ticket
+close_ticket
+escalate_ticket
+update_ticket_priority
+
+Each action must include:
+
+action_type
+action_input
+Reward Model
+
+Reward must include:
+
+reward_score
+progress_score
+penalty_score
+reason
+3. Environment Simulation Logic
+
+You must simulate a real customer support workflow.
+
+Ticket States
+OPEN
+IN_PROGRESS
+WAITING_FOR_CUSTOMER
+RESOLVED
+CLOSED
+ESCALATED
+Episode Flow Example
+reset()
+→ New ticket created
+
+Agent actions:
+classify_ticket
+search_knowledge_base
+send_response
+ask_customer_question
+resolve_ticket
+close_ticket
+
+Episode ends when ticket closed or escalated
+Environment Should Simulate
+Customer responses
+Knowledge base search results
+Ticket priority
+SLA deadlines
+Resolution time
+Customer satisfaction
+Escalation rules
+4. Reward Function Design (Very Important)
+
+Reward must not be binary.
+It must provide reward during the entire episode.
+
+Example Reward Signals
+Action	Reward
+Correct classification	+0.2
+Searching knowledge base	+0.1
+Asking relevant question	+0.15
+Helpful response	+0.25
+Resolving ticket	+0.4
+Closing ticket	+0.2
+Escalation	-0.2
+Wrong resolution	-0.5
+Infinite loop	-1.0
+Too many steps	-0.2
+Fast resolution	+0.2
+High customer satisfaction	+0.3
+
+Final reward must always be between 0.0 and 1.0.
+
+Reward must consider:
+
+resolution accuracy
+time taken
+number of steps
+customer satisfaction
+policy compliance
+correct workflow order
+5. Minimum 3 Tasks With Difficulty Levels
+
+You must implement at least 3 tasks with deterministic graders.
+
+Task 1 — Easy
+
+Password reset ticket.
+
+Agent must:
+
+classify ticket
+search knowledge base
+send instructions
+resolve ticket
+close ticket
+
+Grader checks:
+
+correct classification
+used knowledge base
+resolved ticket
+closed ticket
+steps within limit
+
+Score must be between 0.0 – 1.0
+
+Task 2 — Medium
+
+Billing issue with missing information.
+
+Agent must:
+
+classify billing issue
+ask for invoice number
+wait for customer response
+search knowledge base
+send resolution
+resolve ticket
+close ticket
+
+Grader checks:
+
+asked for missing info
+correct classification
+used KB
+resolved correctly
+closed ticket
+Task 3 — Hard
+
+Technical issue requiring troubleshooting steps.
+
+Agent must:
+
+classify technical issue
+ask diagnostic questions
+search knowledge base multiple times
+provide troubleshooting steps
+resolve ticket
+close ticket
+
+Grader checks:
+
+multi-step reasoning
+knowledge base usage
+correct troubleshooting flow
+efficient steps
+correct resolution
+ticket closure
+
+Each task must have deterministic grader returning score 0.0 – 1.0.
+
+6. Grader Design
+
+Each grader must evaluate:
+
+classification accuracy
+workflow correctness
+knowledge base usage
+customer communication
+resolution correctness
+efficiency
+ticket closure
+
+Example scoring system:
+
+classification correct → +0.2
+used KB → +0.2
+asked for info → +0.2
+resolved → +0.2
+closed → +0.2
+
+Final score:
+
+score = total_points / max_points
+
+Graders must be deterministic and reproducible.
+
+7. Baseline Inference Script Requirements
+
+You must implement inference.py in root.
+
+The script must:
+
+Use OpenAI client
+Read environment variables:
+API_BASE_URL
+MODEL_NAME
+OPENAI_API_KEY
+HF_TOKEN
+
+The script must print logs in EXACT format:
+
+[START]
+task_id=easy_password_reset
+
+[STEP]
+action=classify_ticket
+reward=0.2
+
+[STEP]
+action=search_kb
+reward=0.1
+
+[STEP]
+action=resolve_ticket
+reward=0.4
+
+[END]
+final_score=0.85
+
+Runtime must be less than 20 minutes.
+
+Scores must be reproducible.
+
+8. Docker Requirements
+
+You must include a working Dockerfile that:
+
+Builds successfully
+Runs the environment server
+Exposes API endpoints
+Works with docker build and docker run
+
+Environment must run in containerized mode.
+
+9. Hugging Face Spaces Deployment
+
+Environment must deploy to Hugging Face Spaces with:
+
+Container runtime
+OpenEnv tag
+Working API endpoints
+
+Endpoints must respond:
+
+/reset
+/step
+/state
+
+Must return HTTP 200.
+
+10. openenv.yaml Requirements
+
+Must include:
+
+environment name
+description
+action space definition
+observation space definition
+reward description
+task descriptions
+difficulty levels
+author
+version
+
+Must pass:
+
+openenv validate
+11. README Documentation Requirements
+
+README must include:
+
+Environment description
+Motivation
+Real-world use case
+Action space
+Observation space
+Reward design
+Task descriptions
+Difficulty levels
+Setup instructions
+Docker instructions
+HF Space deployment
+Inference instructions
+Baseline scores
+Example episode walkthrough
+Testing instructions
+
+Documentation quality affects scoring.
+
+12. Testing Requirements
+
+You must write tests for:
+
+reset() returns valid observation
+step() returns observation, reward, done, info
+state() returns environment state
+reward calculation correctness
+grader scoring correctness
+episode termination
+invalid actions handling
+ticket workflow transitions
+
+Tests must pass using:
+
+pytest
+13. Code Review Requirements (Production Grade)
+
+Ensure code quality:
+
+Use typed Pydantic models
+No global mutable state
+Deterministic graders
+Reward bounded between 0–1
+Clean environment state management
+Logging implemented
+Error handling implemented
+Reproducibility via random seed
+Docstrings for all functions
+Modular architecture
+PEP8 compliance
+SOLID principles
+
+Environment must be production-grade quality.
+
+14. Evaluation Criteria Optimization
+
+To maximize score:
+
+Real-world utility (30%)
+
+Simulate:
+
+real customer messages
+real knowledge base
+SLA deadlines
+ticket priority
+customer satisfaction
+escalation workflow
+multi-step conversations
+Task & grader quality (25%)
+
+Ensure:
+
+3+ tasks
+difficulty progression
+deterministic graders
+scores between 0–1
+Environment design (20%)
+
+Ensure:
+
+clean state transitions
+good reward shaping
+clear episode boundaries
+well-designed action/observation spaces
+Code quality (15%)
+
+Ensure:
+
+OpenEnv spec compliance
+Docker works
+HF Space deploys
+Baseline inference reproducible
+Tests pass
+Typed models used
+Creativity (10%)
+
+Add advanced features:
+
+priority tickets
+SLA penalties
+customer satisfaction score
+agent cost per action
+ticket queue
+multiple customers
+escalation manager
+time penalties
+15. Pre-Submission Checklist (Must Pass)
+
+Before submitting ensure all pass:
+
+HF Space deploys
+OpenEnv validate passes
+Docker builds successfully
+Docker container runs
+Inference script runs
+Runtime < 20 minutes
+3+ tasks implemented
+Graders return scores 0.0–1.0
+reset() works
+step() works
+state() works
+README completed
+Baseline scores reproducible
+Tests pass
+
+If any of these fail → Disqualification.
+
+16. Final Goal
+
+Build a production-grade AI training and evaluation environment that simulates:
+
+Customer support ticket workflow
+Ticket classification
+Knowledge base search
+Customer communication
+Troubleshooting
+Resolution
+Ticket closure
+Performance scoring
+
+The final environment must be suitable for:
+
+Reinforcement Learning agents
+LLM agents
+Workflow automation agents
+Customer support automation research
+AI operations research
+FINAL IMPLEMENTATION INSTRUCTION
+
+When implementing this project, follow this order:
+
+1. Design environment architecture
+2. Define Pydantic models
+3. Implement environment state machine
+4. Implement reset(), step(), state()
+5. Implement reward function
+6. Implement tasks
+7. Implement graders
+8. Implement tests
+9. Implement inference.py
+10. Implement Docker
+11. Write openenv.yaml
+12. Write README
+13. Validate OpenEnv
+14. Deploy Hugging Face Space
+15. Run baseline inference
+
+The final system must be:
+
+Fully working
+Containerized
+Tested
+Documented
+Reproducible
+OpenEnv compliant
+Production grade
